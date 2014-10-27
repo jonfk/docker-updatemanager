@@ -1,0 +1,19 @@
+#!/bin/bash -e
+
+export GOPATH=${PWD}/Godeps/_workspace
+export GOBIN=${PWD}/bin
+
+if [ $1 == 'clean' ]; then
+    rm -rf $GOPATH/src/jon
+    rm -rf $GOBIN
+    exit
+fi
+
+if [ ! -h $GOPATH/src/docker-updatemanager ]; then
+    mkdir -p $GOPATH/src/jon
+    ln -s ${PWD} $GOPATH/src/jon/docker-updatemanager
+fi
+
+eval $(go env)
+
+go install jon/docker-updatemanager
