@@ -1,15 +1,15 @@
-#!/bin/bash -e
+#!/bin/bash
 
 export GOPATH=${PWD}/Godeps/_workspace
 export GOBIN=${PWD}/bin
 
-if [ $1 == 'clean' ]; then
+if [ ! -z $1 ] && [ $1 == 'clean' ]; then
     rm -rf $GOPATH/src/jon
     rm -rf $GOBIN
     exit
 fi
 
-if [ ! -h $GOPATH/src/docker-updatemanager ]; then
+if [ ! -h $GOPATH/src/jon/docker-updatemanager ]; then
     mkdir -p $GOPATH/src/jon
     ln -s ${PWD} $GOPATH/src/jon/docker-updatemanager
 fi
