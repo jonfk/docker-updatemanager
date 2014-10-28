@@ -1,125 +1,74 @@
 package main
 
 import (
-        "fmt"
         "github.com/fsouza/go-dockerclient"
 	"github.com/coreos/go-omaha/omaha"
 	"log"
-	"errors"
 	"encoding/xml"
 	"net/http"
 	"io/ioutil"
 	"bytes"
+	"strings"
 )
 
+var CONFIG_FILE = "./config.json"
+
 var DEBUG bool = true
+var DOCKER_ENDPOINT string = "unix:///var/run/docker.sock"
+var UPDATE_SERVER = "http://192.168.1.112:8080/v1/update"
+
+var CONFIG UpdateClientConfig
 
 func main() {
-        endpoint := "unix:///var/run/docker.sock"
-        client, err := docker.NewClient(endpoint)
+	// Set configs
+	CONFIG := readConfig()
+	log.Printf("CONFIG : %#v", CONFIG)
+
+        dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
 	checkError("creating docker client", err)
 
-	printImages(client)
-	//pullImage(client, "docker.jonfk.ca/opendaylight", "hydrogen")
-	//findImageId(client, "docker.jonfk.ca/opendaylight:hydrogen")
-	//startContainer(client, "docker.jonfk.ca/opendaylight:hydrogen")
-	requestUpdate()
-}
+	printImages(dockerClient)
+	//pullImage(dockerClient, "docker.jonfk.ca/opendaylight", "hydrogen")
+	//findImageId(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
+	//startContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
+	//requestUpdate(dockerClient)
+	//findContainerId(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
+	//stopContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
+	//removeContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 
-func printImages(client *docker.Client) {
-        imgs, err := client.ListImages(false)
-	checkError("list images", err)
-        for _, img := range imgs {
-                fmt.Println("ID: ", img.ID)
-                fmt.Println("RepoTags: ", img.RepoTags)
-                fmt.Println("Created: ", img.Created)
-                fmt.Println("Size: ", img.Size)
-                fmt.Println("VirtualSize: ", img.VirtualSize)
-                fmt.Println("ParentId: ", img.ParentId)
-		fmt.Println("")
-        }
-}
-
-func findImageId(client *docker.Client, name string) (string, error) {
-        imgs, err := client.ListImages(false)
-	checkError("find image id for : " + name, err)
-        for _, img := range imgs {
-		for _, repoTag := range img.RepoTags {
-			if repoTag == name {
-				log.Printf("Found image %v with"+
-					"tag %v\n", img.ID, name)
-				if DEBUG {
-					log.Println("Details: ")
-					log.Println("ID: ", img.ID)
-					log.Println("RepoTags: ", img.RepoTags)
-					log.Println("Created: ", img.Created)
-					log.Println("Size: ", img.Size)
-					log.Println("VirtualSize: ", img.VirtualSize)
-					log.Println("ParentId: ", img.ParentId)
-					log.Println("")
-				}
-				return img.ID, nil
-			}
-		}
-        }
-	return "", errors.New("Cannot find image with tag: " + name)
-}
-
-func pullImage(client *docker.Client, repository, tag string) {
-	options := docker.PullImageOptions{
-		Repository: repository,
-		Registry: "docker.jonfk.ca",
-		Tag: tag,
+	/*
+	config := UpdateClientConfig{
+		// Update client configs
+		UpdateServerURL:"http://192.168.1.112:8080/v1/update",
+		DockerEndpoint: "unix:///var/run/docker.sock",
+		Debug: true,
+		// app configs
+		OSVersion: "MyOSVersion",
+		OSPlatform: "coreos",
+		OSSp: "",
+		AppId: "aoeu",
+		AppVersion: "{1.2.3.4}",
+		AppPackageName:"opendaylight:hydrogen",
 	}
-	auth := docker.AuthConfiguration{}
-	err := client.PullImage(options, auth)
-	checkError("Pulling image", err)
+*/
+	//writeConfig(config)
 }
 
-func startContainer(client *docker.Client, name string) {
-	createOptions := docker.CreateContainerOptions {
-		Name: "opendaylight",
-		Config: &docker.Config{
-			Image: name,
-		},
-	}
-	container, err := client.CreateContainer(createOptions)
-	checkError("startContainer func: creating container", err)
-
-	// Configure port bindings or publish all ports to random host ports
-	portBindings := make(map[string]string)
-	portBindings["1088"] = "1088"
-	portBindings["1830"] = "1830"
-	portBindings["2400"] = "2400"
-	portBindings["4342"] = "4342"
-	portBindings["5666"] = "5666"
-	portBindings["6633"] = "6633"
-	portBindings["7800"] = "7800"
-	portBindings["8000"] = "8000"
-	portBindings["8080"] = "8080"
-	portBindings["8383"] = "8383"
-	portBindings["12001"] = "12001"
-
-	hostConfig := docker.HostConfig{
-		PortBindings: generatePortBindings(portBindings),
-		PublishAllPorts: false,
-	}
-	client.StartContainer(container.ID, &hostConfig)
-	log.Println("started container : " + container.ID)
-}
-
-func requestUpdate() {
+func requestUpdate(dockerClient *docker.Client) {
 	osVersion := "testversion"
-	osPlatform := "linux"
+	osPlatform := "coreos"
 	osSp := ""
-	osArch := "x64"
+	osArch := "x86_64"
 
 	appId := "aoeu"
 	appVersion := "{1.2.3.4}"
+	appMachineID := "MyMachineJonfk"
+
 	orequest := omaha.NewRequest(osVersion, osPlatform, osSp, osArch)
 	//orequest.AddApp(appId, appVersion)
 	oapp := omaha.NewApp(appId)
 	oapp.Version = appVersion
+	oapp.MachineID = appMachineID
 	oapp.AddUpdateCheck()
 	orequest.Apps = append(orequest.Apps, oapp)
 
@@ -127,12 +76,13 @@ func requestUpdate() {
 	checkError("func requestUpdate: marshalling xml", err)
 
 	// send request
-	url := ""
+	//url := "http://requestb.in/18tdpae1"
+	url := UPDATE_SERVER
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(marshalledORequest))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/xml")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(req)
 	checkError("func requestUpdate: sending request", err)
 	defer resp.Body.Close()
 
@@ -148,13 +98,39 @@ func requestUpdate() {
 		var oresponse omaha.Response
 		err = xml.Unmarshal(body, &oresponse)
 		if DEBUG {
-			log.Printf("Unmarshalled Body: %v\n", oresponse)
+			log.Printf("Unmarshalled Body: %#v\n", oresponse)
 		}
+		checkError("func requestUpdate: unmarshalling response body", err)
+
+		// React to response
+		reactToOmahaResponse(&oresponse)
+
 	} else {
 		log.Println("Error occurred in func requestUpdate")
 		log.Println("http response returned: ", resp.Status)
 		log.Println("response Headers:", resp.Header)
 		body, _ := ioutil.ReadAll(resp.Body)
 		log.Println("response Body:", string(body))
+	}
+}
+
+func reactToOmahaResponse(oresponse *omaha.Response) {
+        dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
+	checkError("creating docker client", err)
+	for _, orApp := range oresponse.Apps {
+		//newAppVersion := orApp.UpdateCheck.Manifest.Version
+		for _, orPackage := range orApp.UpdateCheck.Manifest.Packages.Packages {
+			newPackageName := orPackage.Name
+			if DEBUG {
+				log.Printf("Package Name: %v\n", newPackageName)
+			}
+			splitName := strings.Split(newPackageName, ":")
+			dockerPackageName := splitName[0]
+			dockerPackageTag := splitName[1]
+			log.Printf("Docker Package Name received: %v, %v\n", dockerPackageName, dockerPackageTag)
+
+			pullImage(dockerClient, "docker.jonfk.ca/"+dockerPackageName, dockerPackageTag)
+			startContainer(dockerClient, "docker.jonfk.ca/"+newPackageName)
+		}
 	}
 }
