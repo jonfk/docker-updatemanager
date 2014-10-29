@@ -1,11 +1,14 @@
 {
-  "UpdateServerURL": "http://192.168.1.112:8080/v1/update",
+  "UpdateServerURL": "http://requestb.in/qauvqgqa",
   "DockerEndpoint": "unix:///var/run/docker.sock",
+  "UpdateDelayInMinutes": 1,
   "Debug": true,
   "OSVersion": "MyOSVersion",
   "OSPlatform": "coreos",
   "OSSp": "",
+  "OSArch": "x86_64",
   "AppId": "aoeu",
   "AppVersion": "{1.2.3.4}",
-  "AppPackageName": "opendaylight:hydrogen"
+  "AppPackageName": "opendaylight:hydrogen",
+  "AppMachineID": "MyMachineJonfk"
 }

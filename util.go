@@ -11,15 +11,18 @@ type UpdateClientConfig struct {
 	// Update client configs
 	UpdateServerURL string `json`
 	DockerEndpoint string `json`
+	UpdateDelayInMinutes int `json`
 	Debug bool `json`
 
 	// app configs
 	OSVersion string `json`
 	OSPlatform string `json`
 	OSSp string `json`
+	OSArch string `json`
 	AppId string `json`
 	AppVersion string `json`
 	AppPackageName string `json`
+	AppMachineID string `json`
 
 }
 
@@ -67,4 +70,26 @@ func writeConfig(config UpdateClientConfig) {
 	}
 	checkError("func writeConfig: json.MarshalIndent: ", err)
 	ioutil.WriteFile(CONFIG_FILE, data, 0664)
+}
+
+// DEBUG functions
+
+func writeDebugConfig() {
+	config := UpdateClientConfig{
+		// Update client configs
+		UpdateServerURL:"http://192.168.1.112:8080/v1/update",
+		DockerEndpoint: "unix:///var/run/docker.sock",
+		UpdateDelayInMinutes: 60,
+		Debug: true,
+		// app configs
+		OSVersion: "MyOSVersion",
+		OSPlatform: "coreos",
+		OSSp: "",
+		OSArch: "x86_64",
+		AppId: "aoeu",
+		AppVersion: "{1.2.3.4}",
+		AppPackageName:"opendaylight:hydrogen",
+		AppMachineID: "MyMachineJonfk",
+	}
+	writeConfig(config)
 }

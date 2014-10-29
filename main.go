@@ -9,20 +9,35 @@ import (
 	"io/ioutil"
 	"bytes"
 	"strings"
+	"time"
+	"sync"
 )
 
 var CONFIG_FILE = "./config.json"
 
+// Defaults to be set from config file
 var DEBUG bool = true
 var DOCKER_ENDPOINT string = "unix:///var/run/docker.sock"
 var UPDATE_SERVER = "http://192.168.1.112:8080/v1/update"
 
 var CONFIG UpdateClientConfig
 
-func main() {
+var WAITGROUP sync.WaitGroup
+
+func init() {
+	//writeDebugConfig()
 	// Set configs
-	CONFIG := readConfig()
-	log.Printf("CONFIG : %#v", CONFIG)
+	CONFIG = readConfig()
+	if DEBUG {
+		log.Printf("CONFIG : %#v", CONFIG)
+	}
+	DEBUG = CONFIG.Debug
+	DOCKER_ENDPOINT = CONFIG.DockerEndpoint
+	UPDATE_SERVER = CONFIG.UpdateServerURL
+
+}
+
+func main() {
 
         dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
 	checkError("creating docker client", err)
@@ -31,41 +46,29 @@ func main() {
 	//pullImage(dockerClient, "docker.jonfk.ca/opendaylight", "hydrogen")
 	//findImageId(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//startContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
-	//requestUpdate(dockerClient)
 	//findContainerId(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//stopContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//removeContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 
-	/*
-	config := UpdateClientConfig{
-		// Update client configs
-		UpdateServerURL:"http://192.168.1.112:8080/v1/update",
-		DockerEndpoint: "unix:///var/run/docker.sock",
-		Debug: true,
-		// app configs
-		OSVersion: "MyOSVersion",
-		OSPlatform: "coreos",
-		OSSp: "",
-		AppId: "aoeu",
-		AppVersion: "{1.2.3.4}",
-		AppPackageName:"opendaylight:hydrogen",
-	}
-*/
-	//writeConfig(config)
+	//requestUpdate()
+	scheduleUpdateRequest(time.Duration(CONFIG.UpdateDelayInMinutes) * time.Minute)
+	WAITGROUP.Wait()
 }
 
-func requestUpdate(dockerClient *docker.Client) {
-	osVersion := "testversion"
-	osPlatform := "coreos"
-	osSp := ""
-	osArch := "x86_64"
+func requestUpdate() {
 
-	appId := "aoeu"
-	appVersion := "{1.2.3.4}"
-	appMachineID := "MyMachineJonfk"
+	log.Printf("CONFIG : %#v", CONFIG)
+
+	osVersion := CONFIG.OSVersion
+	osPlatform := CONFIG.OSPlatform
+	osSp := CONFIG.OSSp
+	osArch := CONFIG.OSArch
+
+	appId := CONFIG.AppId
+	appVersion := CONFIG.AppVersion
+	appMachineID := CONFIG.AppMachineID
 
 	orequest := omaha.NewRequest(osVersion, osPlatform, osSp, osArch)
-	//orequest.AddApp(appId, appVersion)
 	oapp := omaha.NewApp(appId)
 	oapp.Version = appVersion
 	oapp.MachineID = appMachineID
@@ -76,7 +79,6 @@ func requestUpdate(dockerClient *docker.Client) {
 	checkError("func requestUpdate: marshalling xml", err)
 
 	// send request
-	//url := "http://requestb.in/18tdpae1"
 	url := UPDATE_SERVER
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(marshalledORequest))
 	req.Header.Set("Content-Type", "application/xml")
@@ -118,6 +120,7 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
         dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
 	checkError("creating docker client", err)
 	for _, orApp := range oresponse.Apps {
+		// Write new version?
 		//newAppVersion := orApp.UpdateCheck.Manifest.Version
 		for _, orPackage := range orApp.UpdateCheck.Manifest.Packages.Packages {
 			newPackageName := orPackage.Name
@@ -129,8 +132,30 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
 			dockerPackageTag := splitName[1]
 			log.Printf("Docker Package Name received: %v, %v\n", dockerPackageName, dockerPackageTag)
 
+			//ADD LOGIC stop containers, remove containers and add new container
+
 			pullImage(dockerClient, "docker.jonfk.ca/"+dockerPackageName, dockerPackageTag)
 			startContainer(dockerClient, "docker.jonfk.ca/"+newPackageName)
 		}
 	}
+}
+
+func scheduleUpdateRequest(delay time.Duration) chan struct{} {
+	ticker := time.NewTicker(delay)
+	quit := make(chan struct{})
+	WAITGROUP.Add(1)
+
+	go func() {
+		for{
+			select{
+			case <- ticker.C:
+				requestUpdate()
+			case <- quit:
+				ticker.Stop()
+				WAITGROUP.Done()
+				return
+			}
+		}
+	}()
+	return quit
 }
