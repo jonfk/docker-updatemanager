@@ -1,0 +1,11 @@
+[Unit]
+Description=update-client
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+PermissionsStartOnly=true
+ExecStart=/usr/bin/NOS-update-client
+Restart=always
+RestartSec=10s
