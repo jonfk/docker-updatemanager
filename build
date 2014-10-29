@@ -9,6 +9,19 @@ if [ ! -z $1 ] && [ $1 == 'clean' ]; then
     exit
 fi
 
+
+if [ ! -z $1 ]; then
+    # Change the name of the binary to the first argument given
+    mkdir -p $GOPATH/src/jon
+    ln -s ${PWD} "${GOPATH}/src/jon/$1"
+
+    eval $(go env)
+
+    go install "jon/$1"
+    exit
+fi
+
+# Default build
 if [ ! -h $GOPATH/src/jon/docker-updatemanager ]; then
     mkdir -p $GOPATH/src/jon
     ln -s ${PWD} $GOPATH/src/jon/docker-updatemanager
