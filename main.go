@@ -13,7 +13,8 @@ import (
 	"sync"
 )
 
-var CONFIG_FILE = "./config.json"
+//var CONFIG_FILE = "./config.json"
+var CONFIG_FILE = "/usr/share/NOS-update-client/config.json"
 
 // Defaults to be set from config file
 var DEBUG bool = true

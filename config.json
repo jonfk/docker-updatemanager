@@ -1,5 +1,5 @@
 {
-  "UpdateServerURL": "http://requestb.in/qauvqgqa",
+  "UpdateServerURL": "http://192.168.1.115",
   "DockerEndpoint": "unix:///var/run/docker.sock",
   "UpdateDelayInMinutes": 1,
   "Debug": true,

@@ -31,8 +31,8 @@ src_compile() {
 }
 
 src_install() {
-	#insinto /usr/share/docker_images/
-	#doins opendaylight_docker.tar
+	insinto /usr/share/NOS-update-client
+	doins ${S}/config.json
 
 	dobin ${S}/bin/${PN}
 
