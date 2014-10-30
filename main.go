@@ -147,6 +147,7 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
 			CONFIG.AppPackageName = newPackageName
 			CONFIG.DockerImageName = newDockerImageName
 			CONFIG.DockerContainerId = newContainerId
+			writeConfig(CONFIG)
 		}
 	}
 }
