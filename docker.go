@@ -129,6 +129,9 @@ func findContainerId(client *docker.Client, imageName string) (string, error) {
 
 // Stops container started with image imageName
 func stopContainer(client *docker.Client, imageName string) {
+	if DEBUG {
+		log.Printf("Stopping container with image name: \n", imageName)
+	}
 	containerId, err := findContainerId(client, imageName)
 	checkError("func stopContainer: findContainerId for image: " + imageName, err)
 
@@ -136,6 +139,9 @@ func stopContainer(client *docker.Client, imageName string) {
 }
 
 func removeContainer(client *docker.Client, imageName string) {
+	if DEBUG {
+		log.Printf("Removing container with image name: \n", imageName)
+	}
 	containerId, err := findContainerId(client, imageName)
 	checkError("func removeContainer: findContainerId for image: " + imageName, err)
 

@@ -13,8 +13,8 @@ import (
 	"sync"
 )
 
-//var CONFIG_FILE = "./config.json"
-var CONFIG_FILE = "/usr/share/NOS-update-client/config.json"
+var CONFIG_FILE = "./config.json"
+//var CONFIG_FILE = "/usr/share/NOS-update-client/config.json"
 
 // Defaults to be set from config file
 var DEBUG bool = true
@@ -40,10 +40,10 @@ func init() {
 
 func main() {
 
-        dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
-	checkError("creating docker client", err)
+        //dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
+	//checkError("creating docker client", err)
 
-	printImages(dockerClient)
+	//printImages(dockerClient)
 	//pullImage(dockerClient, "docker.jonfk.ca/opendaylight", "hydrogen")
 	//findImageId(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//startContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
@@ -51,12 +51,16 @@ func main() {
 	//stopContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//removeContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 
-	//requestUpdate()
+	requestUpdate()
 	scheduleUpdateRequest(time.Duration(CONFIG.UpdateDelayInMinutes) * time.Minute)
 	WAITGROUP.Wait()
 }
 
 func requestUpdate() {
+
+	if DEBUG {
+		log.Println("Requesting update")
+	}
 
 	log.Printf("CONFIG : %#v", CONFIG)
 
@@ -118,6 +122,9 @@ func requestUpdate() {
 }
 
 func reactToOmahaResponse(oresponse *omaha.Response) {
+	if DEBUG {
+		log.Println("Reacting to omaha response")
+	}
         dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
 	checkError("creating docker client", err)
 	for _, orApp := range oresponse.Apps {
@@ -135,7 +142,9 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
 
 			//ADD LOGIC stop containers, remove containers and add new container
 
-			stopContainer(dockerClient, CONFIG.DockerImageName)
+			if CONFIG.DockerContainerId != "" {
+				stopContainer(dockerClient, CONFIG.DockerImageName)
+			}
 
 			newDockerImageName := "docker.jonfk.ca/"+dockerPackageName
 
