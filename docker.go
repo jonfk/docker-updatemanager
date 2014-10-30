@@ -59,7 +59,9 @@ func pullImage(client *docker.Client, repository, tag string) {
 	checkError("Pulling image", err)
 }
 
-func startContainer(client *docker.Client, name string) {
+// Creates and starts a container on the image name in name argument
+// returns the container id of container started
+func startContainer(client *docker.Client, name string) string {
 	if DEBUG {
 		log.Printf("Starting Container using image: %v\n", name)
 	}
@@ -92,6 +94,7 @@ func startContainer(client *docker.Client, name string) {
 	}
 	client.StartContainer(container.ID, &hostConfig)
 	log.Println("started container : " + container.ID)
+	return container.ID
 }
 
 func findContainerId(client *docker.Client, imageName string) (string, error) {
@@ -124,6 +127,7 @@ func findContainerId(client *docker.Client, imageName string) (string, error) {
 	return "", errors.New("Cannot find container with image: " + imageName)
 }
 
+// Stops container started with image imageName
 func stopContainer(client *docker.Client, imageName string) {
 	containerId, err := findContainerId(client, imageName)
 	checkError("func stopContainer: findContainerId for image: " + imageName, err)

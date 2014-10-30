@@ -122,7 +122,7 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
 	checkError("creating docker client", err)
 	for _, orApp := range oresponse.Apps {
 		// Write new version?
-		//newAppVersion := orApp.UpdateCheck.Manifest.Version
+		newAppVersion := orApp.UpdateCheck.Manifest.Version
 		for _, orPackage := range orApp.UpdateCheck.Manifest.Packages.Packages {
 			newPackageName := orPackage.Name
 			if DEBUG {
@@ -135,8 +135,18 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
 
 			//ADD LOGIC stop containers, remove containers and add new container
 
-			pullImage(dockerClient, "docker.jonfk.ca/"+dockerPackageName, dockerPackageTag)
-			startContainer(dockerClient, "docker.jonfk.ca/"+newPackageName)
+			stopContainer(dockerClient, CONFIG.DockerImageName)
+
+			newDockerImageName := "docker.jonfk.ca/"+dockerPackageName
+
+			pullImage(dockerClient, newDockerImageName, dockerPackageTag)
+			newContainerId := startContainer(dockerClient, "docker.jonfk.ca/"+newPackageName)
+
+			// Update CONFIG
+			CONFIG.AppVersion = newAppVersion
+			CONFIG.AppPackageName = newPackageName
+			CONFIG.DockerImageName = newDockerImageName
+			CONFIG.DockerContainerId = newContainerId
 		}
 	}
 }

@@ -20,9 +20,14 @@ type UpdateClientConfig struct {
 	OSSp string `json`
 	OSArch string `json`
 	AppId string `json`
+	AppMachineID string `json`
+	// Will be updated on update check response
 	AppVersion string `json`
 	AppPackageName string `json`
-	AppMachineID string `json`
+
+	// docker configs (runtime)
+	DockerImageName string `json`
+	DockerContainerId string `json`
 
 }
 
@@ -87,9 +92,12 @@ func writeDebugConfig() {
 		OSSp: "",
 		OSArch: "x86_64",
 		AppId: "aoeu",
+		AppMachineID: "MyMachineJonfk",
 		AppVersion: "{1.2.3.4}",
 		AppPackageName:"opendaylight:hydrogen",
-		AppMachineID: "MyMachineJonfk",
+
+		DockerImageName: "",
+		DockerContainerId: "",
 	}
 	writeConfig(config)
 }
