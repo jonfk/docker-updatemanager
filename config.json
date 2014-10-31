@@ -1,14 +1,16 @@
 {
   "UpdateServerURL": "http://192.168.1.115:8080/v1/update",
   "DockerEndpoint": "unix:///var/run/docker.sock",
-  "UpdateDelayInMinutes": 1,
+  "UpdateDelayInMinutes": 60,
   "Debug": true,
-  "OSVersion": "MyOSVersion",
-  "OSPlatform": "coreos",
+  "OSVersion": "\"14.04.1 LTS, Trusty Tahr\"",
+  "OSPlatform": "\"Ubuntu\"",
   "OSSp": "",
   "OSArch": "x86_64",
-  "AppId": "aoeu",
-  "AppVersion": "{1.2.3.4}",
-  "AppPackageName": "opendaylight:hydrogen",
-  "AppMachineID": "MyMachineJonfk"
+  "AppId": "opendaylight",
+  "AppMachineID": "503e5c9f-b20a-422c-a8a3-ef508a299f33\n",
+  "AppVersion": "0",
+  "AppPackageName": "opendaylight:helium",
+  "DockerImageName": "",
+  "DockerContainerId": ""
 }

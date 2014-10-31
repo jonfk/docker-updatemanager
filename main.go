@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 	"sync"
+	"os/exec"
 )
 
 //var CONFIG_FILE = "./config.json"
@@ -35,6 +36,28 @@ func init() {
 	DEBUG = CONFIG.Debug
 	DOCKER_ENDPOINT = CONFIG.DockerEndpoint
 	UPDATE_SERVER = CONFIG.UpdateServerURL
+
+	if CONFIG.AppMachineID == "" {
+		out, err := exec.Command("uuidgen").Output()
+		checkError("func init: generating uuid", err)
+
+		CONFIG.AppMachineID = string(out)
+		writeConfig(CONFIG)
+	}
+
+	if CONFIG.OSVersion == "" || CONFIG.OSPlatform == "" {
+		out, err := ioutil.ReadFile("/etc/os-release")
+		checkError("func init: reading /etc/os-release", err)
+		for _, line := range strings.Split(string(out), "\n") {
+			sLine := strings.Split(line, "=")
+			if sLine[0] == "NAME" {
+				CONFIG.OSPlatform = sLine[1]
+			} else if sLine[0] == "VERSION" {
+				CONFIG.OSVersion = sLine[1]
+			}
+		}
+		writeConfig(CONFIG)
+	}
 
 }
 
