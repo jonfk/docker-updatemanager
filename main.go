@@ -67,8 +67,8 @@ func main() {
 	//checkError("creating docker client", err)
 
 	//printImages(dockerClient)
-	//pullImage(dockerClient, "docker.jonfk.ca/opendaylight", "hydrogen")
-	//findImageId(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
+	//pullImage(dockerClient, "docker.inocybe.com/opendaylight", "helium")
+	//findImageId(dockerClient, "docker.inocybe.com/opendaylight:hydrogen")
 	//startContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//findContainerId(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//stopContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
@@ -169,10 +169,10 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
 				stopContainer(dockerClient, CONFIG.DockerImageName)
 			}
 
-			newDockerImageName := "docker.jonfk.ca/"+dockerPackageName
+			newDockerImageName := "docker.inocybe.com/"+dockerPackageName
 
 			pullImage(dockerClient, newDockerImageName, dockerPackageTag)
-			newContainerId := startContainer(dockerClient, "docker.jonfk.ca/"+newPackageName)
+			newContainerId := startContainer(dockerClient, "docker.inocybe.com/"+newPackageName)
 
 			// Update CONFIG
 			CONFIG.AppVersion = newAppVersion

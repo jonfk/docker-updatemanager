@@ -51,7 +51,7 @@ func pullImage(client *docker.Client, repository, tag string) {
 	}
 	options := docker.PullImageOptions{
 		Repository: repository,
-		Registry: "docker.jonfk.ca",
+		Registry: "docker.inocybe.com",
 		Tag: tag,
 	}
 	auth := docker.AuthConfiguration{}
