@@ -14,8 +14,8 @@ import (
 	"os/exec"
 )
 
-//var CONFIG_FILE = "./config.json"
-var CONFIG_FILE = "/usr/share/NOS-update-client/config.json"
+var CONFIG_FILE = "./config.json"
+//var CONFIG_FILE = "/usr/share/NOS-update-client/config.json"
 
 // Defaults to be set from config file
 var DEBUG bool = true
@@ -41,7 +41,7 @@ func init() {
 		out, err := exec.Command("uuidgen").Output()
 		checkError("func init: generating uuid", err)
 
-		CONFIG.AppMachineID = string(out)
+		CONFIG.AppMachineID = strings.Trim(string(out), "\n")
 		writeConfig(CONFIG)
 	}
 
@@ -51,9 +51,9 @@ func init() {
 		for _, line := range strings.Split(string(out), "\n") {
 			sLine := strings.Split(line, "=")
 			if sLine[0] == "NAME" {
-				CONFIG.OSPlatform = sLine[1]
+				CONFIG.OSPlatform = strings.Trim(sLine[1], "\"")
 			} else if sLine[0] == "VERSION" {
-				CONFIG.OSVersion = sLine[1]
+				CONFIG.OSVersion = strings.Trim(sLine[1], "\"")
 			}
 		}
 		writeConfig(CONFIG)
