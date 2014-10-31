@@ -20,7 +20,7 @@ var CONFIG_FILE = "/usr/share/NOS-update-client/config.json"
 // Defaults to be set from config file
 var DEBUG bool = true
 var DOCKER_ENDPOINT string = "unix:///var/run/docker.sock"
-var UPDATE_SERVER = "http://192.168.1.112:8080/v1/update"
+var UPDATE_SERVER = "http://update.inocybe.com:8080/v1/update"
 
 var CONFIG UpdateClientConfig
 
