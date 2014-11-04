@@ -66,7 +66,6 @@ func startContainer(client *docker.Client, name string) string {
 		log.Printf("Starting Container using image: %v\n", name)
 	}
 	createOptions := docker.CreateContainerOptions {
-		Name: "opendaylight",
 		Config: &docker.Config{
 			Image: name,
 		},

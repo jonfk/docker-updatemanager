@@ -14,8 +14,8 @@ import (
 	"os/exec"
 )
 
-//var CONFIG_FILE = "./config.json"
-var CONFIG_FILE = "/usr/share/NOS-update-client/config.json"
+var CONFIG_FILE = "./config.json"
+//var CONFIG_FILE = "/usr/share/NOS-update-client/config.json"
 
 // Defaults to be set from config file
 var DEBUG bool = true
@@ -74,7 +74,7 @@ func main() {
 	//stopContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//removeContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 
-	requestUpdate()
+	firstRun()
 	scheduleUpdateRequest(time.Duration(CONFIG.UpdateDelayInMinutes) * time.Minute)
 	WAITGROUP.Wait()
 }
@@ -182,6 +182,26 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
 			writeConfig(CONFIG)
 		}
 	}
+}
+
+func firstRun() {
+        dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
+	checkError("func firstRun: creating docker client", err)
+
+	if CONFIG.DockerContainerId != "" {
+		return
+	}
+
+	dockerImageName := "docker.inocybe.com/opendaylight"
+	dockerPackageTag := "helium"
+
+	pullImage(dockerClient, dockerImageName, dockerPackageTag)
+	newContainerId := startContainer(dockerClient, dockerImageName+":"+dockerPackageTag)
+
+	// Update CONFIG
+	CONFIG.DockerImageName = dockerImageName + ":" + dockerPackageTag
+	CONFIG.DockerContainerId = newContainerId
+	writeConfig(CONFIG)
 }
 
 func scheduleUpdateRequest(delay time.Duration) chan struct{} {
