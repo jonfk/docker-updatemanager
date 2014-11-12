@@ -78,8 +78,6 @@ func startContainer(client *docker.Client, name string) string {
 	portBindings := make(map[string]string)
 	portBindings["162"] = "162" // SNMP4SDN only when started as root
 	portBindings["179"] = "179" // BGP
-	portBindings[""] = ""
-	portBindings[""] = ""
 	portBindings["1088"] = "1088" // JMX access
 	portBindings["1790"] = "1790" // BGP/PCEP
 	portBindings["1830"] = "1830" // Netconf
