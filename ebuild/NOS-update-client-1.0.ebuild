@@ -31,7 +31,7 @@ src_compile() {
 }
 
 src_install() {
-	insinto /usr/share/NOS-update-client
+	insinto /etc/NOS-update-client
 	doins ${S}/config.json
 
 	dobin ${S}/bin/${PN}

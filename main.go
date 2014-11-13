@@ -15,7 +15,7 @@ import (
 )
 
 //var CONFIG_FILE = "./config.json"
-var CONFIG_FILE = "/usr/share/NOS-update-client/config.json"
+var CONFIG_FILE = "/etc/NOS-update-client/config.json"
 
 // Defaults to be set from config file
 var DEBUG bool = true
@@ -69,12 +69,14 @@ func main() {
 	//printImages(dockerClient)
 	//pullImage(dockerClient, "docker.inocybe.com/opendaylight", "helium")
 	//findImageId(dockerClient, "docker.inocybe.com/opendaylight:hydrogen")
-	//startContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
+	//startContainerFromImage(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//findContainerId(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
-	//stopContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
+	//stopContainerFromImage(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 	//removeContainer(dockerClient, "docker.jonfk.ca/opendaylight:hydrogen")
 
-	firstRun()
+	go handleKill()
+
+	startupRun()
 	scheduleUpdateRequest(time.Duration(CONFIG.UpdateDelayInMinutes) * time.Minute)
 	WAITGROUP.Wait()
 }
@@ -166,13 +168,16 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
 			//ADD LOGIC stop containers, remove containers and add new container
 
 			if CONFIG.DockerContainerId != "" {
-				stopContainer(dockerClient, CONFIG.DockerImageName)
+				stopContainerFromImage(dockerClient, CONFIG.DockerImageName)
+				removeContainer(dockerClient, CONFIG.DockerImageName)
+				CONFIG.DockerContainerId = ""
+				CONFIG.DockerImageName = ""
 			}
 
 			newDockerImageName := "docker.inocybe.com/"+dockerPackageName
 
 			pullImage(dockerClient, newDockerImageName, dockerPackageTag)
-			newContainerId := startContainer(dockerClient, "docker.inocybe.com/"+newPackageName)
+			newContainerId := startContainerFromImage(dockerClient, "docker.inocybe.com/"+newPackageName)
 
 			// Update CONFIG
 			CONFIG.AppVersion = newAppVersion
@@ -184,11 +189,15 @@ func reactToOmahaResponse(oresponse *omaha.Response) {
 	}
 }
 
-func firstRun() {
+// Runs on every start of the program
+// starts up the docker container it's running if there is one
+// else pull the opendaylight image and start the container from the image
+func startupRun() {
         dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
-	checkError("func firstRun: creating docker client", err)
+	checkError("func startupRun: creating docker client", err)
 
 	if CONFIG.DockerContainerId != "" {
+		startContainer(dockerClient, CONFIG.DockerContainerId)
 		return
 	}
 
@@ -196,7 +205,7 @@ func firstRun() {
 	dockerPackageTag := "helium"
 
 	pullImage(dockerClient, dockerImageName, dockerPackageTag)
-	newContainerId := startContainer(dockerClient, dockerImageName+":"+dockerPackageTag)
+	newContainerId := startContainerFromImage(dockerClient, dockerImageName+":"+dockerPackageTag)
 
 	// Update CONFIG
 	CONFIG.DockerImageName = dockerImageName + ":" + dockerPackageTag

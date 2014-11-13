@@ -1,0 +1,16 @@
+{
+  "UpdateServerURL": "http://update.inocybe.com:8080/v1/update",
+  "DockerEndpoint": "unix:///var/run/docker.sock",
+  "UpdateDelayInMinutes": 60,
+  "Debug": true,
+  "OSVersion": "",
+  "OSPlatform": "",
+  "OSSp": "",
+  "OSArch": "x86_64",
+  "AppId": "opendaylight",
+  "AppMachineID": "",
+  "AppVersion": "0",
+  "AppPackageName": "opendaylight:helium",
+  "DockerImageName": "",
+  "DockerContainerId": ""
+}

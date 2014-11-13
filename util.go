@@ -5,6 +5,9 @@ import (
         "github.com/fsouza/go-dockerclient"
 	"io/ioutil"
 	"encoding/json"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 type UpdateClientConfig struct {
@@ -29,6 +32,29 @@ type UpdateClientConfig struct {
 	DockerImageName string `json`
 	DockerContainerId string `json`
 
+}
+
+// Handles SIGTERM and SIGINT signal
+// Tries to exit gracefully and stops all running docker containers
+func handleKill() {
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	// Block until a signal is received.
+	s := <-c
+	log.Println("Received signal:", s)
+
+	// Exit Logic
+        dockerClient, err := docker.NewClient(DOCKER_ENDPOINT)
+	checkError("handleKill func: creating docker client", err)
+	stopContainerFromImage(dockerClient, CONFIG.DockerImageName)
+
+	code := 0
+	if DEBUG {
+		log.Printf("Exiting with error code: %v\n", code)
+	}
+	os.Exit(code)
 }
 
 func checkError(context string, err error) {

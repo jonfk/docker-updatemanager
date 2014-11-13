@@ -62,13 +62,13 @@ func pullImage(client *docker.Client, repository, tag string) {
 // Creates and starts a container on the image name in name argument
 // Currently has specific ports opened for Opendaylight Helium
 // returns the container id of container started
-func startContainer(client *docker.Client, name string) string {
+func startContainerFromImage(client *docker.Client, imageName string) string {
 	if DEBUG {
-		log.Printf("Starting Container using image: %v\n", name)
+		log.Printf("Starting Container using image: %v\n", imageName)
 	}
 	createOptions := docker.CreateContainerOptions {
 		Config: &docker.Config{
-			Image: name,
+			Image: imageName,
 		},
 	}
 	container, err := client.CreateContainer(createOptions)
@@ -104,9 +104,55 @@ func startContainer(client *docker.Client, name string) string {
 		PortBindings: generatePortBindings(portBindings),
 		PublishAllPorts: false,
 	}
-	client.StartContainer(container.ID, &hostConfig)
+	err = client.StartContainer(container.ID, &hostConfig)
+	checkError("startContainerFromImage func: docker.StartContainer", err)
 	log.Println("started container : " + container.ID)
 	return container.ID
+}
+
+// Starts an already started container that has been stopped
+// Takes the container id as argument
+// Currently has specific ports opened for Opendaylight Helium
+// returns the container id of container started
+func startContainer(client *docker.Client, containerId string) string {
+	if DEBUG {
+		log.Printf("Starting Container with id: %v\n", containerId)
+	}
+
+	// Configure port bindings or publish all ports to random host ports
+	portBindings := make(map[string]string)
+	portBindings["162"] = "162" // SNMP4SDN only when started as root
+	portBindings["179"] = "179" // BGP
+	portBindings["1088"] = "1088" // JMX access
+	portBindings["1790"] = "1790" // BGP/PCEP
+	portBindings["1830"] = "1830" // Netconf
+	portBindings["2400"] = "2400" // OSGi console
+	portBindings["2550"] = "2550" // ODL Clustering
+	portBindings["2551"] = "2551" // ODL Clustering
+	portBindings["2552"] = "2552" // ODL Clustering
+	portBindings["4189"] = "4189" // PCEP
+	portBindings["4342"] = "4342" // Lips Flow Mapping
+	portBindings["5005"] = "5005" // JConsole
+	portBindings["5666"] = "5666" // ODL Internal clustering RPC
+	portBindings["6633"] = "6633" // OpenFlow
+	portBindings["6640"] = "6640" // OVSDB
+	portBindings["6653"] = "6653" // OpenFlow
+	portBindings["7800"] = "7800" // ODL Clustering
+	portBindings["8000"] = "8000" // Java debug access
+	portBindings["8080"] = "8080" // OpenDaylight web portal
+	portBindings["8101"] = "8101" // KarafSSH
+	portBindings["8181"] = "8181" // MD-SAL RESTCONF and DLUX
+	portBindings["8383"] = "8383" // Netconf
+	portBindings["12001"] = "12001" // ODL Clustering
+
+	hostConfig := docker.HostConfig{
+		PortBindings: generatePortBindings(portBindings),
+		PublishAllPorts: false,
+	}
+	err := client.StartContainer(containerId, &hostConfig)
+	checkError("startContainer func: docker.StartContainer", err)
+	log.Println("started container : " + containerId)
+	return containerId
 }
 
 func findContainerId(client *docker.Client, imageName string) (string, error) {
@@ -140,7 +186,7 @@ func findContainerId(client *docker.Client, imageName string) (string, error) {
 }
 
 // Stops container started with image imageName
-func stopContainer(client *docker.Client, imageName string) {
+func stopContainerFromImage(client *docker.Client, imageName string) {
 	if DEBUG {
 		log.Printf("Stopping container with image name: \n", imageName)
 	}
